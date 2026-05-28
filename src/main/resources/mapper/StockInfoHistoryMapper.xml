@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiao.stockproject.mapper.StockInfoHistoryMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiao.stockproject.entity.StockInfoHistory">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="stockName" column="stock_name" jdbcType="VARCHAR"/>
+            <result property="stockCode" column="stock_code" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="currentPrice" column="current_price" jdbcType="VARCHAR"/>
+            <result property="floatPrice" column="float_price" jdbcType="VARCHAR"/>
+            <result property="floatRate" column="float_rate" jdbcType="VARCHAR"/>
+            <result property="highestPrice" column="highest_price" jdbcType="VARCHAR"/>
+            <result property="lowestPrice" column="lowest_price" jdbcType="VARCHAR"/>
+            <result property="openPrice" column="open_price" jdbcType="VARCHAR"/>
+            <result property="volume" column="volume" jdbcType="BIGINT"/>
+            <result property="turnover" column="turnover" jdbcType="BIGINT"/>
+            <result property="closingPrice" column="closing_price" jdbcType="VARCHAR"/>
+            <result property="transactionTime" column="transaction_time" jdbcType="TIMESTAMP"/>
+            <result property="amountOfChange" column="amount_of_change" jdbcType="VARCHAR"/>
+            <result property="priceLimit" column="price_limit" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,stock_name,stock_code,
+        create_time,update_time,current_price,
+        float_price,float_rate,highest_price,
+        lowest_price,open_price,volume,
+        turnover,closing_price,transaction_time,
+        amount_of_change,price_limit
+    </sql>
+</mapper>

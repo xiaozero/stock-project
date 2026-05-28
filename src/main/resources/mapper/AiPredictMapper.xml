@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xiao.stockproject.mapper.AiPredictMapper">
+
+    <resultMap id="BaseResultMap" type="com.xiao.stockproject.entity.AiPredict">
+            <id property="id" column="id" jdbcType="INTEGER"/>
+            <result property="aiSource" column="ai_source" jdbcType="VARCHAR"/>
+            <result property="currentPrice" column="current_price" jdbcType="DECIMAL"/>
+            <result property="buySuggestion" column="buy_suggestion" jdbcType="VARCHAR"/>
+            <result property="buyPrice" column="buy_price" jdbcType="VARCHAR"/>
+            <result property="takeProfit" column="take_profit" jdbcType="VARCHAR"/>
+            <result property="stopLoss" column="stop_loss" jdbcType="VARCHAR"/>
+            <result property="relativeReason" column="relative_reason" jdbcType="VARCHAR"/>
+            <result property="correspondingRisk" column="corresponding_risk" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,ai_source,current_price,
+        buy_suggestion,buy_price,take_profit,
+        stop_loss,relative_reason,corresponding_risk,
+        create_time
+    </sql>
+</mapper>

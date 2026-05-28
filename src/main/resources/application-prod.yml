@@ -1,0 +1,87 @@
+project:
+  env: prod
+server:
+  port: 18888
+  tomcat:
+    max-swallow-size: -1
+  error:
+    include-exception: true
+    include-stacktrace: ALWAYS
+    include-message: ALWAYS
+  servlet:
+    context-path: /stock
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/javascript,application/json,application/xml,text/html,text/xml,text/plain,text/css,image/*
+spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  ## quartz定时任务,采用数据库方式
+  #json 时间戳统一转换
+  jackson:
+    date-format:   yyyy-MM-dd HH:mm:ss
+    time-zone:   GMT+8
+  resource:
+    static-locations: classpath:/static/,classpath:/public/
+  datasource:
+    url: jdbc:mysql://localhost:3306/stock_project?useUnicode=true&characterEncoding=UTF-8&useSSL=false&tinyInt1isBit=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+#  quartz:
+#    auto-startup: true
+#    job-store-type: jdbc
+#    overwrite-existing-jobs: true
+#    properties:
+#      org:
+#        quartz:
+#          jobStore:
+#            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+#            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+#            tablePrefix: QRTZ_
+#            isClustered: true
+#            misfireThreshold: 60000
+#            clusterCheckinInterval: 10000
+#          threadPool:
+#            class: org.quartz.simpl.SimpleThreadPool
+#            threadCount: 10
+#            threadPriority: 9
+#            threadsInheritContextClassLoaderOfInitializingThread: true
+#          scheduler:
+#            instanceName: MyScheduler
+#            instanceId: AUTO
+
+
+#mybatis plus 设置
+mybatis-plus:
+  mapper-locations: classpath*:com/xiao/stockproject/**/xml/*Mapper.xml
+  global-config:
+    # 关闭MP3.0自带的banner
+    banner: false
+    db-config:
+      #主键类型
+      id-type: ASSIGN_ID
+      # 默认数据库表下划线命名
+      table-underline: true
+  configuration:
+    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 返回类型为Map,显示null对应的字段
+    call-setters-on-nulls: true
+#Mybatis输出sql日志
+logging:
+  level:
+    org.jeecg.modules.system.mapper : info
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    operationsSorter: method
