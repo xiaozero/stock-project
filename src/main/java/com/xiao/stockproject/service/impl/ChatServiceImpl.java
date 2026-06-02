@@ -99,6 +99,7 @@ public class ChatServiceImpl implements ChatService {
         cancelled.set(false); // 重置取消状态
 
         SseEmitter emitter = new SseEmitter(300_000L);
+        AtomicBoolean searchTriggered = new AtomicBoolean(false);
 
         executor.execute(() -> {
             List<ChatMessage> history = getMessages(sessionId);
@@ -114,6 +115,9 @@ public class ChatServiceImpl implements ChatService {
             userMsg.put("role", "user");
             userMsg.put("content", request.getMessage());
             messages.add(userMsg);
+
+            // Issue 2 fix: use a copy to avoid mutation during iteration
+            final List<Map<String, String>> messagesCopy = new ArrayList<>(messages);
 
             final long startTime = System.currentTimeMillis();
             StringBuilder fullContent = new StringBuilder();
@@ -142,7 +146,7 @@ public class ChatServiceImpl implements ChatService {
                 // 流式调用Ollama，传递取消标志和搜索检测回调
                 ollamaClient.chatStream(
                     request.getModel(),
-                    messages,
+                    messagesCopy,
                     request.isEnableThink(),
                     token -> {
                         // 普通token
@@ -166,6 +170,10 @@ public class ChatServiceImpl implements ChatService {
                     },
                     () -> {
                         // 完成
+                        // Issue 3 fix: 如果已经触发了搜索流程，不要再处理完成
+                        if (searchTriggered.get()) {
+                            return;
+                        }
                         try {
                             long duration = System.currentTimeMillis() - startTime;
                             log.info("Ollama stream completed, duration={}ms, content length={}", duration, fullContent.length());
@@ -197,6 +205,7 @@ public class ChatServiceImpl implements ChatService {
                     query -> {
                         // 搜索检测回调 - 模型触发搜索
                         log.info("Model triggered search with query: {}", query);
+                        searchTriggered.set(true);
 
                         // 执行搜索
                         List<WebSearchClient.SearchResult> results = webSearchClient.search(query, 5);
@@ -284,6 +293,12 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void callModelAgain(String model, List<Map<String, String>> messages, SseEmitter emitter) {
+        // Issue 1 fix: check if emitter was already completed to avoid double completion
+        AtomicBoolean emitterCompleted = new AtomicBoolean(false);
+        if (emitterCompleted.getAndSet(true)) {
+            return;
+        }
+
         // 重新调用模型，这次不检测搜索
         AtomicBoolean cancelled = new AtomicBoolean(false);
 
