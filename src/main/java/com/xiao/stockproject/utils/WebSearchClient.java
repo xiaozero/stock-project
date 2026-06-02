@@ -8,6 +8,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.springframework.stereotype.Component;
 
+import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 @Component
-public class WebSearchClient {
+public class WebSearchClient implements Closeable {
 
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private static final int TIMEOUT_SECONDS = 30;
@@ -36,7 +37,7 @@ public class WebSearchClient {
         public String getSnippet() { return snippet; }
         public String getUrl() { return url; }
         public String toDisplayString() {
-            return title + " - " + snippet;
+            return snippet.isEmpty() ? title : title + " - " + snippet;
         }
     }
 
@@ -74,7 +75,7 @@ public class WebSearchClient {
                 // 尝试获取 snippet
                 String snippet = "";
                 int snippetStart = html.indexOf("<a class=\"result__snippet\"", resultMatcher.end());
-                if (snippetStart > 0 && snippetStart < snippetStart + 2000) {
+                if (snippetStart > resultMatcher.end() && snippetStart < resultMatcher.end() + 2000) {
                     Matcher snippetMatcher = snippetPattern.matcher(html.substring(snippetStart));
                     if (snippetMatcher.find()) {
                         snippet = snippetMatcher.group(1).replaceAll("<[^>]+>", "").trim();
@@ -92,5 +93,14 @@ public class WebSearchClient {
             log.error("Search failed for query: {}", query, e);
         }
         return results;
+    }
+
+    @Override
+    public void close() {
+        try {
+            httpClient.close();
+        } catch (Exception e) {
+            log.warn("Failed to close httpClient", e);
+        }
     }
 }
