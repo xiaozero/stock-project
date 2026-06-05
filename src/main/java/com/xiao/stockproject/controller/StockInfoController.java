@@ -54,13 +54,13 @@ public class StockInfoController {
     public Result<StockAiAnalysis> aiAnalyze(@RequestBody AiAnalyzeRequest request) {
         StockAiAnalysis result = stockAiAnalysisService.analyzeStock(
             request.getStockCode(), request.getStockName());
-        return Result.success(result);
+        return Result.OK(result);
     }
 
     @ApiOperation(value="获取AI分析历史", notes="获取AI分析历史")
     @GetMapping("/ai-analyze/{stockCode}")
     public Result<List<StockAiAnalysis>> getAiAnalysisHistory(@PathVariable String stockCode) {
-        return Result.success(stockAiAnalysisService.getAnalysisHistory(stockCode));
+        return Result.OK(stockAiAnalysisService.getAnalysisHistory(stockCode));
     }
 
     @Data
