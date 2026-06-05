@@ -85,3 +85,9 @@ springdoc:
     path: /swagger-ui.html
     disable-swagger-default-url: true
     operationsSorter: method
+
+# Stock analysis configuration
+stock:
+  analysis:
+    python-path: python
+    script-path: scripts/stock_analysis.py
