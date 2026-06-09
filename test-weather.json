@@ -1,0 +1,7 @@
+{
+  "sessionId": "SESSION_PLACEHOLDER",
+  "model": "qwen3.5:2b",
+  "message": "beijing weather",
+  "enableThink": false,
+  "enableWebSearch": true
+}

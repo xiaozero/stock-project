@@ -35,7 +35,12 @@
         <div class="message-list" ref="messageListRef">
           <div v-for="msg in messages" :key="msg.id" :class="['message', msg.role]">
             <div class="message-content">
-              <div v-if="msg.role === 'user'" class="message-text">{{ msg.content }}</div>
+              <div v-if="msg.role === 'user'" class="message-text">
+                <img v-if="msg.imageData"
+                     :src="'data:image/png;base64,' + msg.imageData"
+                     class="message-image" />
+                {{ msg.content }}
+              </div>
               <template v-else>
                 <div v-if="msg.thinkContent" class="think-content">
                   <div class="think-header">💭 思考过程</div>
@@ -67,6 +72,10 @@
         </div>
 
         <div class="input-area">
+          <div class="image-preview" v-if="uploadImage">
+            <img :src="uploadImage" alt="preview" />
+            <el-icon class="remove-image" @click="uploadImage = null"><Close /></el-icon>
+          </div>
           <el-input
             v-model="inputText"
             type="textarea"
@@ -74,7 +83,19 @@
             placeholder="输入消息，Enter发送，Shift+Enter换行"
             @keydown.enter.exact.prevent="sendMessage"
           />
-          <el-button type="primary" @click="sendMessage" :loading="sending">发送</el-button>
+          <div class="input-actions">
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              style="display:none"
+              @change="onFileSelected"
+            />
+            <el-button size="small" type="primary" plain @click="triggerFileInput">
+              <el-icon><Plus /></el-icon>
+            </el-button>
+            <el-button type="primary" @click="sendMessage" :loading="sending">发送</el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -84,7 +105,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, Close, Plus } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 const models = ref([])
@@ -100,6 +121,38 @@ const sending = ref(false)
 const streamingMessage = ref('')
 const streamingThink = ref('')
 const messageListRef = ref(null)
+const uploadImage = ref('')
+const fileInputRef = ref(null)
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const onFileSelected = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件')
+    return
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    uploadImage.value = e.target.result
+  }
+  reader.readAsDataURL(file)
+
+  // 重置 value 使同一文件重新选择时也能触发 change
+  event.target.value = ''
+}
 
 const request = axios.create({
   baseURL: '/stock',
@@ -188,7 +241,7 @@ const scrollToBottom = () => {
 }
 
 const sendMessage = async () => {
-  if (!inputText.value.trim()) return
+  if (!inputText.value.trim() && !uploadImage.value) return
 
   if (!currentSessionId.value) {
     ElMessage.warning('请先创建会话')
@@ -201,32 +254,37 @@ const sendMessage = async () => {
 
   sending.value = true
   const userMessage = inputText.value
+  const imageData = uploadImage.value
   inputText.value = ''
 
   // 添加用户消息
   messages.value.push({
     id: Date.now(),
     role: 'user',
-    content: userMessage
+    content: userMessage,
+    image: imageData
   })
   scrollToBottom()
 
   // 清空流式输出状态
   streamingMessage.value = ''
   streamingThink.value = ''
+  uploadImage.value = ''
 
   try {
     const response = await fetch('/stock/api/chat/chat/stream', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream'
       },
       body: JSON.stringify({
         sessionId: currentSessionId.value,
         model: currentModel.value,
         message: userMessage,
         enableThink: enableThink.value,
-        enableWebSearch: enableWebSearch.value
+        enableWebSearch: enableWebSearch.value,
+        image: imageData ? imageData.split(',')[1] : null
       })
     })
 
@@ -243,34 +301,71 @@ const sendMessage = async () => {
       if (done) break
 
       buffer += decoder.decode(value, { stream: true })
+
+      // 处理 SSE 格式 (event:message\ndata:{...})
       const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
+      buffer = lines.pop() || '' // 保留最后一行（可能不完整）
+
+      let eventType = 'message'
+      let pendingData = false // data: 已收到，等待下一行数据
 
       for (const line of lines) {
-        if (!line.trim() || !line.startsWith('data:')) continue
-
-        const data = line.slice(5).trim()
-        try {
-          const json = JSON.parse(data)
-
-          if (json.type === 'token') {
-            streamingMessage.value += json.content
-          } else if (json.type === 'think') {
-            streamingThink.value += json.content
-          } else if (json.type === 'done') {
-            console.log('完成:', json)
-          } else if (json.type === 'search') {
-            console.log('搜索结果:', json.query, json.results)
+        const trimmedLine = line.trim()
+        if (trimmedLine.startsWith('event:')) {
+          eventType = trimmedLine.slice(6)
+          pendingData = false
+        } else if (trimmedLine.startsWith('data:')) {
+          // data: 行，提取内容，可能在同一行或下一行
+          const dataContent = trimmedLine.slice(5)
+          if (dataContent) {
+            // data:json 在同一行
+            try {
+              const json = JSON.parse(dataContent)
+              console.log('收到事件:', eventType, json)
+              if (json.type === 'token') {
+                streamingMessage.value += json.content
+              } else if (json.type === 'think') {
+                streamingThink.value += json.content
+              } else if (json.type === 'done') {
+                console.log('完成:', json)
+              }
+              await nextTick()
+              scrollToBottom()
+            } catch (e) {
+              console.error('解析事件失败:', e, dataContent)
+            }
+          } else {
+            // data: 后面没有内容，等待下一行
+            pendingData = true
           }
-          scrollToBottom()
-        } catch (e) {
-          // 忽略解析错误
+        } else if (pendingData && trimmedLine) {
+          // 上一行是空的 data:，这一行是实际数据
+          pendingData = false
+          try {
+            const json = JSON.parse(trimmedLine)
+            console.log('收到事件:', eventType, json)
+            if (json.type === 'token') {
+              streamingMessage.value += json.content
+            } else if (json.type === 'think') {
+              streamingThink.value += json.content
+            } else if (json.type === 'done') {
+              console.log('完成:', json)
+            }
+            await nextTick()
+            scrollToBottom()
+          } catch (e) {
+            console.error('解析事件失败:', e, trimmedLine)
+          }
         }
       }
     }
 
     // 完成后重新加载消息获取完整内容
+    console.log('流式读取完成，streamingMessage:', streamingMessage.value)
     await loadMessages()
+    // 清空流式输出状态
+    streamingMessage.value = ''
+    streamingThink.value = ''
   } catch (e) {
     console.error('SSE连接失败', e)
     ElMessage.error('连接失败: ' + e.message)
@@ -453,6 +548,14 @@ onMounted(() => {
   white-space: pre-wrap;
 }
 
+.message-image {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  display: block;
+}
+
 .think-content {
   background: #fff8e6;
   border: 1px solid #ffeaa7;
@@ -506,12 +609,51 @@ onMounted(() => {
   padding: 16px 20px;
   background: #fff;
   display: flex;
+  flex-direction: column;
   gap: 12px;
   align-items: flex-end;
   border-top: 1px solid #e4e7ed;
 }
 
 .input-area .el-textarea {
-  flex: 1;
+  width: 100%;
+}
+
+.input-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.input-actions .el-button--primary .el-icon {
+  margin-right: 4px;
+}
+
+.image-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 4px;
 }
 </style>

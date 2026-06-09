@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:18888/api/stock/list)",
+      "Bash(scripts/start-server.sh *)",
+      "Bash(node *)",
+      "Bash(mvn compile *)",
+      "Bash(npm run *)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(netstat -ano)",
+      "Bash(curl -X POST http://localhost:18888/stock/api/chat/chat/stream -H \"Content-Type: application/json\" -d '{\"sessionId\":\"test\",\"model\":\"qwen2.5:7b\",\"message\":\"你好\",\"enableThink\":false}')",
+      "Bash(powershell -Command \"Invoke-WebRequest -Uri 'http://localhost:18888/stock/api/chat/models' -Method GET | Select-Object -ExpandProperty Content\")",
+      "Bash(powershell -Command ' *)",
+      "Bash(pkill -f \"spring-boot-maven-plugin\\\\|stock-server\")",
+      "Bash(mvn spring-boot:run -q)",
+      "Bash(curl *)",
+      "Bash(mvn clean *)",
+      "Bash(taskkill //F //PID 9724)",
+      "Bash(taskkill //F //PID 5412)",
+      "Bash(taskkill //F //PID 6056)",
+      "Bash(cd /d D:\\\\privateWorkspace\\\\stock-project\\\\frontend)",
+      "Bash(ls -la dist)",
+      "Bash(mvn spring-boot:run -pl .)",
+      "Bash(taskkill //F //PID 2200)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

@@ -148,6 +148,7 @@ public class ChatServiceImpl implements ChatService {
                     request.getModel(),
                     messagesCopy,
                     request.isEnableThink(),
+                    null, // 不使用多模态图片
                     token -> {
                         // 普通token
                         try {
@@ -230,7 +231,8 @@ public class ChatServiceImpl implements ChatService {
                             // 重新调用模型生成最终回答
                             callModelAgain(request.getModel(), messages, emitter);
                         }
-                    }
+                    },
+                    null // 不使用工具调用处理器
                 );
             } catch (Exception e) {
                 log.error("Chat stream error", e);
@@ -293,19 +295,14 @@ public class ChatServiceImpl implements ChatService {
     }
 
     private void callModelAgain(String model, List<Map<String, String>> messages, SseEmitter emitter) {
-        // Issue 1 fix: check if emitter was already completed to avoid double completion
-        AtomicBoolean emitterCompleted = new AtomicBoolean(false);
-        if (emitterCompleted.getAndSet(true)) {
-            return;
-        }
-
-        // 重新调用模型，这次不检测搜索
+        // 重新调用模型，这次不检测搜索、不使用多模态、不启用工具调用
         AtomicBoolean cancelled = new AtomicBoolean(false);
 
         ollamaClient.chatStream(
             model,
             messages,
             false, // 不启用 think
+            null, // 不使用多模态图片
             token -> {
                 try {
                     String data = "{\"type\":\"token\",\"content\":\"" + escapeJson(token) + "\"}";
@@ -333,7 +330,8 @@ public class ChatServiceImpl implements ChatService {
                 }
             },
             cancelled,
-            null // 不检测搜索
+            null, // 不检测搜索
+            null  // 不启用工具调用
         );
     }
 }

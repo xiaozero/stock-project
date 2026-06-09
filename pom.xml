@@ -106,10 +106,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -137,6 +133,7 @@
                     <include>*.xml</include>
                     <include>*.lib</include>
                     <include>*.yml</include>
+                    <include>static/**</include>
                 </includes>
             </resource>
             <resource>
@@ -148,6 +145,42 @@
             </resource>
         </resources>
         <plugins>
+            <!-- frontend-maven-plugin: 自动构建Vue前端 -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.15.0</version>
+                <configuration>
+                    <nodeVersion>v18.17.0</nodeVersion>
+                    <npmVersion>9.8.0</npmVersion>
+                    <workingDirectory>frontend</workingDirectory>
+                    <skip.executions>true</skip.executions>
+                </configuration>
+            </plugin>
+            <!-- maven-resources-plugin: 复制前端构建产物到static目录 -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-frontend-dist</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/src/main/resources/static</outputDirectory>
+                            <overWrite>true</overWrite>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/frontend/dist</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

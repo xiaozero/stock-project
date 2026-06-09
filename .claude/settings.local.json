@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(mvn clean *)",
+      "Bash(jar tf *)",
+      "Bash(unzip -l target/stock-server.jar)",
+      "Bash(cp *)",
+      "Bash(curl -s http://localhost:11434/api/chat -d '{\"model\":\"qwen3.5:2b\",\"messages\":[{\"role\":\"user\",\"content\":\"今天北京天气怎么样？\"}],\"stream\":false}')",
+      "WebSearch",
+      "Bash(mvn compile *)",
+      "Bash(mvn package *)",
+      "Bash(curl -s --connect-timeout 3 http://localhost:11434/api/tags)",
+      "Bash(mysql -uroot -proot -e \"SELECT 1\")",
+      "Bash(curl *)",
+      "Bash(bash *)",
+      "Bash(taskkill //F //IM java.exe)",
+      "Bash(rm -f D:/privateWorkspace/stock-project/target/stock-server.jar.original)",
+      "Bash(pkill -f \"stock-project\")",
+      "Bash(nohup java *)",
+      "Bash(netstat -ano)",
+      "Bash(git checkout *)",
+      "Bash(mvn spring-boot:run -q)",
+      "Bash(node test-stream.js)",
+      "Bash(pkill -f \"spring-boot:run\")",
+      "Bash(node test-sse.js)"
+    ]
+  }
+}
